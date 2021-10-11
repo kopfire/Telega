@@ -102,7 +102,7 @@ namespace Telega
 
                     }
                 }
-                else if (update.Message.Text == "/start")
+                else if (update.Message.Text == "/check")
                 {
                     var person = new Check { UserName = "Admin", Password = "Admin" };
 
