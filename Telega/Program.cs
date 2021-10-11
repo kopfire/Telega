@@ -19,24 +19,6 @@ namespace Telega
 {
     class Program
     {
-
-        static async Task<string> PostURI(Uri u, HttpContent c)
-        {
-            var response = string.Empty;
-            using (var client = new HttpClient())
-            {
-                HttpResponseMessage result = await client.PostAsync(u, c);
-                if (result.IsSuccessStatusCode)
-                {
-                    response = result.StatusCode.ToString();
-                }
-            }
-            return response;
-        }
-
-        static readonly HttpClient httpClient = new HttpClient();
-
-
         static int count = 0;
 
         static void Main(string[] args)
@@ -99,20 +81,12 @@ namespace Telega
                           duration: 2,
                           replyMarkup: replyKeyboardMarkup
                         );
-
                     }
                 }
                 else if (update.Message.Text == "/start")
                 {
-                    var person = new Check { UserName = "Admin", Password = "Admin" };
-
-                    var jsonString = JsonSerializer.Serialize<Check>(person);
-                    var data = new StringContent(jsonString, Encoding.UTF8, "application/json");
-
-                    var url = "http://localhost:5000/api/user/login";
-                    using var client = new HttpClient();
-
-                    var response = await client.PostAsync(url, data);                
+                    string n1 = await PostURI("start", chatId);
+                    Console.WriteLine(n1);
 
                     await botClient.SendTextMessageAsync(
                         chatId: chatId,
@@ -129,6 +103,29 @@ namespace Telega
                         replyMarkup: replyKeyboardMarkup); 
                 }
             }
+        }
+
+        static async Task<string> PostURI(string command, long chatId)
+        {
+
+            var jsonPost = new JsonPost { Command = command, User = chatId };
+            var jsonString = JsonSerializer.Serialize<JsonPost>(jsonPost);
+            Console.WriteLine(jsonString);
+
+
+            var person = new Check { UserName = "Admin", Password = "Admin" };
+
+            var jsonStringTest = JsonSerializer.Serialize<Check>(person);
+            var data = new StringContent(jsonStringTest, Encoding.UTF8, "application/json");
+
+            var url = "http://localhost:5000/api/user/login";
+            using var client = new HttpClient();
+
+            var response = await client.PostAsync(url, data);
+
+            Console.WriteLine(response.Content.ReadAsStringAsync().Result);
+            Console.WriteLine(1);
+            return response.Content.ReadAsStringAsync().Result;
         }
     }
 }
