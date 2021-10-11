@@ -1,14 +1,12 @@
 ﻿using System;
-using System.IO;
-using System.Net;
+using System.Globalization;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Telega.Helpers.JSON;
 using Telegram.Bot;
-using Telegram.Bot.Args;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Extensions.Polling;
 using Telegram.Bot.Types;
@@ -68,27 +66,18 @@ namespace Telega
 
                 var chatId = update.Message.Chat.Id;
 
-                var replyKeyboardMarkup = new ReplyKeyboardMarkup(
-                    new KeyboardButton[][]
-                    {
-                        new KeyboardButton[] { "Да.", "Нет.", KeyboardButton.WithRequestLocation("Хде я")},
-
-                    })
-                {
-                    ResizeKeyboard = true
-                };
-
                 
                 Console.WriteLine($"Received a '{update.Message.Text}' message in chat {chatId} {update.Message.Chat.FirstName}.");
 
-                if (update.Message.Text == "Да." && count > 10) 
+                Message message = update.Message;
+
+                if (message.Text == "Да." && count > 10) 
                 {
                     await botClient.SendTextMessageAsync(
                             chatId: chatId,
-                            text: update.Message.Chat.FirstName +  ", хватит спамить!!",
-                            replyMarkup: replyKeyboardMarkup);                    
+                            text: update.Message.Chat.FirstName +  ", хватит спамить!!");                    
                 }
-                else if (update.Message.Text == "Да.")
+                else if (message.Text == "Да.")
                 {
                     count++;
                     using (var stream = System.IO.File.OpenRead("/path/to/voice-nfl_commentary.ogg"))
@@ -96,37 +85,87 @@ namespace Telega
                         await botClient.SendVoiceAsync(
                           chatId: chatId,
                           voice: stream,
-                          duration: 2,
-                          replyMarkup: replyKeyboardMarkup
+                          duration: 2
                         );
 
                     }
                 }
-                else if (update.Message.Text == "/check")
+                else if (message.Text == "/check")
                 {
-                    var person = new Check { UserName = "Admin", Password = "Admin" };
+                    var jsonPost = new JsonPost { Command = "check", User = message.Chat.Id };
 
-                    var jsonString = JsonSerializer.Serialize<Check>(person);
+                    var jsonString = JsonSerializer.Serialize(jsonPost);
                     var data = new StringContent(jsonString, Encoding.UTF8, "application/json");
 
-                    var url = "http://localhost:5000/api/user/login";
+                    var url = "http://localhost:5000/api/telegram/message";
                     using var client = new HttpClient();
 
-                    var response = await client.PostAsync(url, data);                
+                    var response = await client.PostAsync(url, data);
+                    if (response.Content != null)
+                    {
+                        DateTime dayNow = DateTime.Today;
+                        var cal = new GregorianCalendar();
+                        var weekNumber = cal.GetWeekOfYear(dayNow, CalendarWeekRule.FirstFullWeek, DayOfWeek.Monday);
+                        Console.WriteLine(dayNow.DayOfWeek);
+                        Console.WriteLine(weekNumber);
+                        var responseContent = await response.Content.ReadAsStringAsync();
+                        Console.WriteLine(responseContent);
 
-                    await botClient.SendTextMessageAsync(
-                        chatId: chatId,
-                        text: "lol",
-                        replyMarkup: replyKeyboardMarkup);
+                        var timeTable = JsonSerializer.Deserialize<TimeTable>(responseContent);
+
+                        Console.WriteLine(timeTable);
+
+                        Console.WriteLine(timeTable.Weeks.Length);
+                        int c = 0;
+                        foreach (Week week in timeTable.Weeks)
+                        {
+                            if (week.Number == weekNumber % 2)
+                            {
+                                Console.WriteLine(week.Number);
+                                Console.WriteLine(week.Days);
+                                foreach (Day day in week.Days)
+                                {
+                                    Console.WriteLine(day.Name);
+                                    Console.WriteLine(dayNow.DayOfWeek);
+                                    if (day.Name.Equals(dayNow.DayOfWeek.ToString()))
+                                    {
+                                        string responseMessage = "";
+                                        foreach (Lesson lesson in day.Lessons)
+                                        {
+                                            responseMessage += lesson.Number + " пара\n";
+                                            responseMessage += lesson.Name + "\n";
+                                            responseMessage += lesson.Teacher + "\n";
+                                            responseMessage += lesson.Audience + "\n\n";
+                                        }
+
+                                        c = 1;
+                                        await botClient.SendTextMessageAsync(
+                                            chatId: chatId,
+                                            text: responseMessage);
+                                    }
+                                }
+                            }
+                        }
+                        if (c == 0)
+                        {
+                            await botClient.SendTextMessageAsync(
+                                            chatId: chatId,
+                                            text: "Завтра нет пар!");
+                        }
+                    }
+                    else
+                    {
+                        await botClient.SendTextMessageAsync(
+                            chatId: chatId,
+                            text: "lol");
+                    }
+                    
+                    
                 }
                 else
                 {
                     
-                    count = 0;
-                    await botClient.SendTextMessageAsync(
-                        chatId: chatId,
-                        text: "Да что ты говоришь!",
-                        replyMarkup: replyKeyboardMarkup); 
+                    
                 }
             }
         }

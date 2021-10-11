@@ -1,9 +1,9 @@
 ﻿namespace Telega
 {
-    class Json
+    class JsonPost
     {
         public string Command { get; set; }
 
-        public int User { get; set; }
+        public long User { get; set; }
     }
 }
