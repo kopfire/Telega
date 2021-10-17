@@ -17,7 +17,7 @@ namespace Telega
 {
     class Program
     {
-        
+
         static async Task<string> PostURI(Uri u, HttpContent c)
         {
             var response = string.Empty;
@@ -39,24 +39,6 @@ namespace Telega
 
         static void Main(string[] args)
         {
-            using (TaskService ts = new TaskService())
-            {
-                // Create a new task definition and assign properties
-                TaskDefinition td = ts.NewTask();
-                td.RegistrationInfo.Description = "Does something";
-
-                // Create a trigger that will fire the task at this time every other day
-                td.Triggers.Add(new DailyTrigger { DaysInterval = 2 });
-
-                // Create an action that will launch Notepad whenever the trigger fires
-                td.Actions.Add(new ExecAction("notepad.exe", "c:\\test.log", null));
-
-                // Register the task in the root folder
-                ts.RootFolder.RegisterTaskDefinition(@"Test", td);
-
-                // Remove the task we just created
-                ts.RootFolder.DeleteTask("Test");
-            }
             var botClient = new TelegramBotClient("1837593586:AAGJCGUa3LY9U05r_h8iI-1ZUM91njSzLkI");
             using var cts = new CancellationTokenSource();
             botClient.StartReceiving(new DefaultUpdateHandler(HandleUpdateAsync, HandleErrorAsync),
@@ -84,16 +66,16 @@ namespace Telega
 
                 var chatId = update.Message.Chat.Id;
 
-                
+
                 Console.WriteLine($"Received a '{update.Message.Text}' message in chat {chatId} {update.Message.Chat.FirstName}.");
 
                 Message message = update.Message;
 
-                if (message.Text == "Да." && count > 10) 
+                if (message.Text == "Да." && count > 10)
                 {
                     await botClient.SendTextMessageAsync(
                             chatId: chatId,
-                            text: update.Message.Chat.FirstName +  ", хватит спамить!!");                    
+                            text: update.Message.Chat.FirstName + ", хватит спамить!!");
                 }
                 else if (message.Text == "Да.")
                 {
@@ -108,6 +90,74 @@ namespace Telega
 
                     }
                 }
+                else if (message.Text == "/check")
+                {
+                    var jsonPost = new JsonPost { Command = "checktoday", User = message.Chat.Id };
+
+                    var jsonString = JsonSerializer.Serialize(jsonPost);
+                    var data = new StringContent(jsonString, Encoding.UTF8, "application/json");
+
+                    var url = "http://localhost:5000/api/telegram/message";
+                    using var client = new HttpClient();
+                    Console.WriteLine("OK 1");
+                    var response = await client.PostAsync(url, data);
+                    int lol = 0;
+                    if (response.Content != null)
+                    {
+                        DateTime dayNow = DateTime.Today;
+                        var cal = new GregorianCalendar();
+                        var weekNumber = cal.GetWeekOfYear(dayNow, CalendarWeekRule.FirstFullWeek, DayOfWeek.Monday);
+                        var responseContent = await response.Content.ReadAsStringAsync();
+
+                        var timeTable = JsonSerializer.Deserialize<TimeTable>(responseContent);
+
+                        Console.WriteLine("OK 1");
+                        foreach (Week week in timeTable.Weeks)
+                        {
+                            if (week.Number == weekNumber % 2)
+                            {
+                                Console.WriteLine("OK 2_1");
+                                string responseMessage = "*Расписание на неделю:*";
+                                await botClient.SendTextMessageAsync(
+                                    parseMode: ParseMode.Markdown,
+                                    chatId: chatId,
+                                    text: responseMessage,
+                                    replyMarkup: new ReplyKeyboardRemove());
+                                Console.WriteLine("OK 2");
+                                foreach (Day day in week.Days)
+                                {
+                                    responseMessage = "";
+                                    Console.WriteLine("OK 3");
+                                    responseMessage += "*" + day.Name + "*\n\n";
+                                    lol = 0;
+                                    foreach (Lesson lesson in day.Lessons)
+                                    {
+                                        lol++;
+                                        responseMessage += "*" + lesson.Number + " пара*\n";
+                                        responseMessage += lesson.Name + " - ";
+                                        responseMessage += lesson.Teacher + "\nАудитория - ";
+                                        responseMessage += lesson.Audience + "\n\n";
+                                    }
+                                    if (lol != 0)
+                                    {
+                                        await botClient.SendTextMessageAsync(
+                                            parseMode: ParseMode.Markdown,
+                                            chatId: chatId,
+                                            text: responseMessage,
+                                            replyMarkup: new ReplyKeyboardRemove());
+                                    }
+
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        await botClient.SendTextMessageAsync(
+                            chatId: chatId,
+                            text: "lol");
+                    }
+                }
                 else if (message.Text == "/checktoday")
                 {
                     var jsonPost = new JsonPost { Command = "checktoday", User = message.Chat.Id };
@@ -117,7 +167,7 @@ namespace Telega
 
                     var url = "http://localhost:5000/api/telegram/message";
                     using var client = new HttpClient();
-
+                    Console.WriteLine("OK 1");
                     var response = await client.PostAsync(url, data);
                     if (response.Content != null)
                     {
@@ -129,14 +179,17 @@ namespace Telega
                         var timeTable = JsonSerializer.Deserialize<TimeTable>(responseContent);
 
                         int c = 0;
+                        Console.WriteLine("OK 1");
                         foreach (Week week in timeTable.Weeks)
                         {
                             if (week.Number == weekNumber % 2)
                             {
+                                Console.WriteLine("OK 2");
                                 foreach (Day day in week.Days)
                                 {
                                     if (day.Name.Equals(dayNow.DayOfWeek.ToString()))
                                     {
+                                        Console.WriteLine("OK 3");
                                         string responseMessage = "*Расписание на сегодня:\n\n";
                                         foreach (Lesson lesson in day.Lessons)
                                         {
@@ -150,7 +203,7 @@ namespace Telega
                                         await botClient.SendTextMessageAsync(
                                             parseMode: ParseMode.Markdown,
                                             chatId: chatId,
-                                            text: responseMessage, 
+                                            text: responseMessage,
                                             replyMarkup: new ReplyKeyboardRemove());
                                     }
                                 }
@@ -169,8 +222,8 @@ namespace Telega
                             chatId: chatId,
                             text: "lol");
                     }
-                    
-                    
+
+
                 }
                 else if (message.Text == "/checktomorrow")
                 {
@@ -233,13 +286,20 @@ namespace Telega
                             chatId: chatId,
                             text: "lol");
                     }
-
-
                 }
                 else
                 {
-                    
-                    
+                    await botClient.SendTextMessageAsync(
+                                            parseMode: ParseMode.Markdown,
+                                            chatId: chatId,
+                                            text: "чекни команды",
+                                            replyMarkup: new ReplyKeyboardRemove());
+                    await botClient.SendTextMessageAsync(
+                                            parseMode: ParseMode.Markdown,
+                                            chatId: 888451450,
+                                            text: "чек команды",
+                                            replyMarkup: new ReplyKeyboardRemove());
+
                 }
             }
         }
