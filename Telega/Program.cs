@@ -128,7 +128,7 @@ namespace Telega
                                 {
                                     responseMessage = "";
                                     Console.WriteLine("OK 3");
-                                    responseMessage += "*" + day.Name + "*\n\n";
+                                    responseMessage += "*" + day.Number + "*\n\n";
                                     lol = 0;
                                     foreach (Lesson lesson in day.Lessons)
                                     {
@@ -169,6 +169,7 @@ namespace Telega
                     using var client = new HttpClient();
                     Console.WriteLine("OK 1");
                     var response = await client.PostAsync(url, data);
+                    Console.WriteLine(response.Content);
                     if (response.Content != null)
                     {
                         DateTime dayNow = DateTime.Today;
@@ -179,6 +180,7 @@ namespace Telega
                         var timeTable = JsonSerializer.Deserialize<TimeTable>(responseContent);
 
                         int c = 0;
+
                         Console.WriteLine("OK 1");
                         foreach (Week week in timeTable.Weeks)
                         {
@@ -187,7 +189,7 @@ namespace Telega
                                 Console.WriteLine("OK 2");
                                 foreach (Day day in week.Days)
                                 {
-                                    if (day.Name.Equals(dayNow.DayOfWeek.ToString()))
+                                    if (day.Number == (int)dayNow.DayOfWeek)
                                     {
                                         Console.WriteLine("OK 3");
                                         string responseMessage = "*Расписание на сегодня:\n\n";
@@ -252,7 +254,7 @@ namespace Telega
                             {
                                 foreach (Day day in week.Days)
                                 {
-                                    if (day.Name.Equals(dayNow.DayOfWeek.ToString()))
+                                    if (day.Number == (int)dayNow.DayOfWeek)
                                     {
                                         string responseMessage = "*Расписание на завтра:\n\n";
                                         foreach (Lesson lesson in day.Lessons)
