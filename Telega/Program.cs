@@ -82,20 +82,18 @@ namespace Telega
 
                     var jsonString = JsonSerializer.Serialize(jsonPost);
                     var data = new StringContent(jsonString, Encoding.UTF8, "application/json");
-
                     var url = "http://localhost:5000/api/telegram/message";
                     using var client = new HttpClient();
                     var response = await client.PostAsync(url, data);
                     int lol = 0;
-                    if (response.Content != null)
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    if (!responseContent.Equals("null"))
                     {
                         DateTime dayNow = DateTime.Today;
                         var cal = new GregorianCalendar();
                         var weekNumber = cal.GetWeekOfYear(dayNow, CalendarWeekRule.FirstFullWeek, DayOfWeek.Monday);
-                        var responseContent = await response.Content.ReadAsStringAsync();
 
                         var timeTable = JsonSerializer.Deserialize<TimeTable>(responseContent);
-
                         foreach (Week week in timeTable.Weeks)
                         {
                             if (week.Number == weekNumber % 2)
@@ -149,12 +147,12 @@ namespace Telega
                     var url = "http://localhost:5000/api/telegram/message";
                     using var client = new HttpClient();
                     var response = await client.PostAsync(url, data);
-                    if (response.Content != null)
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    if (!responseContent.Equals("null"))
                     {
                         DateTime dayNow = DateTime.Today;
                         var cal = new GregorianCalendar();
                         var weekNumber = cal.GetWeekOfYear(dayNow, CalendarWeekRule.FirstFullWeek, DayOfWeek.Monday);
-                        var responseContent = await response.Content.ReadAsStringAsync();
 
                         var timeTable = JsonSerializer.Deserialize<TimeTable>(responseContent);
 
@@ -167,10 +165,11 @@ namespace Telega
                                 {
                                     if (day.Number == (int)dayNow.DayOfWeek)
                                     {
-                                        string responseMessage = "*Расписание на сегодня:\n\n";
+                                        string responseMessage = "*Расписание на сегодня:\n\n*";
                                         foreach (Lesson lesson in day.Lessons)
                                         {
-                                            responseMessage += lesson.Number + " пара*\n";
+
+                                            responseMessage += "*" + lesson.Number + " пара*\n";
                                             responseMessage += lesson.Name + " - ";
                                             responseMessage += lesson.Teacher + "\nАудитория - ";
                                             responseMessage += lesson.Audience + "\n\n";
@@ -212,15 +211,15 @@ namespace Telega
                     var url = "http://localhost:5000/api/telegram/message";
                     using var client = new HttpClient();
                     var response = await client.PostAsync(url, data);
-                    if (response.Content != null)
+
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    if (!responseContent.Equals("null"))
                     {
                         DateTime dayNow = DateTime.Today.AddDays(1);
                         var cal = new GregorianCalendar();
                         var weekNumber = cal.GetWeekOfYear(dayNow, CalendarWeekRule.FirstFullWeek, DayOfWeek.Monday);
-                        var responseContent = await response.Content.ReadAsStringAsync();
 
                         var timeTable = JsonSerializer.Deserialize<TimeTable>(responseContent);
-
                         int c = 0;
                         foreach (Week week in timeTable.Weeks)
                         {
@@ -230,16 +229,17 @@ namespace Telega
                                 {
                                     if (day.Number == (int)dayNow.DayOfWeek)
                                     {
-                                        string responseMessage = "*Расписание на завтра:\n\n";
+                                        string responseMessage = "*Расписание на завтра:*\n\n";
                                         foreach (Lesson lesson in day.Lessons)
                                         {
-                                            responseMessage += lesson.Number + " пара*\n";
+                                            
+                                            responseMessage += "*" + lesson.Number + " пара*\n";
                                             responseMessage += lesson.Name + " - ";
                                             responseMessage += lesson.Teacher + "\nАудитория - ";
                                             responseMessage += lesson.Audience + "\n\n";
                                         }
 
-                                        c = 1;
+                                        c = 1; 
                                         await botClient.SendTextMessageAsync(
                                             parseMode: ParseMode.Markdown,
                                             chatId: chatId,
