@@ -148,7 +148,8 @@ namespace Telega
                     using var client = new HttpClient();
                     var response = await client.PostAsync(url, data);
                     var responseContent = await response.Content.ReadAsStringAsync();
-                    if (!responseContent.Equals("null"))
+                    Console.WriteLine(responseContent);
+                    if (responseContent != null)
                     {
                         DateTime dayNow = DateTime.Today;
                         var cal = new GregorianCalendar();
