@@ -19,22 +19,6 @@ namespace Telega
     class Program
     {
 
-        static async Task<string> PostURI(Uri u, HttpContent c)
-        {
-            var response = string.Empty;
-            using (var client = new HttpClient())
-            {
-                HttpResponseMessage result = await client.PostAsync(u, c);
-                if (result.IsSuccessStatusCode)
-                {
-                    response = result.StatusCode.ToString();
-                }
-            }
-            return response;
-        }
-
-        static readonly HttpClient httpClient = new HttpClient();
-
         static void Main(string[] args)
         {
             Dictionary<int, string> days = new Dictionary<int, string>(6);
@@ -45,7 +29,7 @@ namespace Telega
             days.Add(5, "Пятница");
             days.Add(6, "Суббота");
 
-            var botClient = new TelegramBotClient("1837593586:AAGJCGUa3LY9U05r_h8iI-1ZUM91njSzLkI");
+            var botClient = new TelegramBotClient("1837593586:AAElIgx9Anhpm3tz58zjGNlwO0zcsBxTNdY");
             using var cts = new CancellationTokenSource();
             botClient.StartReceiving(new DefaultUpdateHandler(HandleUpdateAsync, HandleErrorAsync),
     cts.Token);
@@ -83,10 +67,23 @@ namespace Telega
                     var jsonString = JsonSerializer.Serialize(jsonPost);
                     var data = new StringContent(jsonString, Encoding.UTF8, "application/json");
                     var url = "http://localhost:5000/api/telegram/message";
-                    using var client = new HttpClient();
-                    var response = await client.PostAsync(url, data);
+                    var client = new HttpClient();
+                    client.DefaultRequestHeaders.Add();
+                    var response = await client.GetAsync(url);
+
+                    var request = new HttpRequestMessage
+                    {
+                        Method = HttpMethod.Get,
+                        RequestUri = new Uri("some url"),
+                        Content = new StringContent("some json", Encoding.UTF8, ContentType.Json),
+                    };
+
+                    var response = await client.SendAsync(request).ConfigureAwait(false);
+
                     int lol = 0;
+                    Console.WriteLine(response);
                     var responseContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine(responseContent);
                     if (!responseContent.Equals("null"))
                     {
                         DateTime dayNow = DateTime.Today;
