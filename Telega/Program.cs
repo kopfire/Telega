@@ -1,9 +1,8 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net.Http;
-using System.Text;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Telega.Helpers.JSON;
@@ -62,36 +61,18 @@ namespace Telega
 
                 if (message.Text == "/check")
                 {
-                    var jsonPost = new JsonPost { Command = "checktoday", User = message.Chat.Id };
-
-                    var jsonString = JsonSerializer.Serialize(jsonPost);
-                    var data = new StringContent(jsonString, Encoding.UTF8, "application/json");
-                    var url = "http://localhost:5000/api/telegram/message";
+                    var url = "http://localhost:5000/api/telegram/message/?UserID=";
                     var client = new HttpClient();
-                    client.DefaultRequestHeaders.Add();
-                    var response = await client.GetAsync(url);
-
-                    var request = new HttpRequestMessage
-                    {
-                        Method = HttpMethod.Get,
-                        RequestUri = new Uri("some url"),
-                        Content = new StringContent("some json", Encoding.UTF8, ContentType.Json),
-                    };
-
-                    var response = await client.SendAsync(request).ConfigureAwait(false);
-
-
-                    int lol = 0;
-                    Console.WriteLine(response);
+                    var response = await client.GetAsync(url + message.Chat.Id);
+                    int lol = 0; 
                     var responseContent = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine(responseContent);
                     if (!responseContent.Equals("null"))
                     {
                         DateTime dayNow = DateTime.Today;
                         var cal = new GregorianCalendar();
                         var weekNumber = cal.GetWeekOfYear(dayNow, CalendarWeekRule.FirstFullWeek, DayOfWeek.Monday);
 
-                        var timeTable = JsonSerializer.Deserialize<TimeTable>(responseContent);
+                        var timeTable = JsonConvert.DeserializeObject<TimeTable>(responseContent);
                         foreach (Week week in timeTable.Weeks)
                         {
                             if (week.Number == weekNumber % 2)
@@ -137,24 +118,17 @@ namespace Telega
                 }
                 else if (message.Text == "/checktoday")
                 {
-                    var jsonPost = new JsonPost { Command = "checktoday", User = message.Chat.Id };
-
-                    var jsonString = JsonSerializer.Serialize(jsonPost);
-                    var data = new StringContent(jsonString, Encoding.UTF8, "application/json");
-
-                    var url = "http://localhost:5000/api/telegram/message";
-                    using var client = new HttpClient();
-                    var response = await client.PostAsync(url, data);
+                    var url = "http://localhost:5000/api/telegram/message/?UserID=";
+                    var client = new HttpClient();
+                    var response = await client.GetAsync(url + message.Chat.Id);
                     var responseContent = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine(responseContent);
                     if (responseContent != null)
                     {
                         DateTime dayNow = DateTime.Today;
                         var cal = new GregorianCalendar();
                         var weekNumber = cal.GetWeekOfYear(dayNow, CalendarWeekRule.FirstFullWeek, DayOfWeek.Monday);
 
-                        var timeTable = JsonSerializer.Deserialize<TimeTable>(responseContent);
-
+                        var timeTable = JsonConvert.DeserializeObject<TimeTable>(responseContent);
                         int c = 0;
                         foreach (Week week in timeTable.Weeks)
                         {
@@ -202,15 +176,9 @@ namespace Telega
                 }
                 else if (message.Text == "/checktomorrow")
                 {
-                    var jsonPost = new JsonPost { Command = "checkTomorrow", User = message.Chat.Id };
-
-                    var jsonString = JsonSerializer.Serialize(jsonPost);
-                    var data = new StringContent(jsonString, Encoding.UTF8, "application/json");
-
-                    var url = "http://localhost:5000/api/telegram/message";
-                    using var client = new HttpClient();
-                    var response = await client.PostAsync(url, data);
-
+                    var url = "http://localhost:5000/api/telegram/message/?UserID=";
+                    var client = new HttpClient();
+                    var response = await client.GetAsync(url + message.Chat.Id);
                     var responseContent = await response.Content.ReadAsStringAsync();
                     if (!responseContent.Equals("null"))
                     {
@@ -218,8 +186,7 @@ namespace Telega
                         var cal = new GregorianCalendar();
                         var weekNumber = cal.GetWeekOfYear(dayNow, CalendarWeekRule.FirstFullWeek, DayOfWeek.Monday);
 
-                        var timeTable = JsonSerializer.Deserialize<TimeTable>(responseContent);
-                        int c = 0;
+                        var timeTable = JsonConvert.DeserializeObject<TimeTable>(responseContent); int c = 0;
                         foreach (Week week in timeTable.Weeks)
                         {
                             if (week.Number == weekNumber % 2)
