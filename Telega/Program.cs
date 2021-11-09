@@ -80,6 +80,7 @@ namespace Telega
 
                     var response = await client.SendAsync(request).ConfigureAwait(false);
 
+
                     int lol = 0;
                     Console.WriteLine(response);
                     var responseContent = await response.Content.ReadAsStringAsync();
